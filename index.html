@@ -3,188 +3,727 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weather Station Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+  <title>Weather Station — Field Notebook</title>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --bg:#050a10;--surface:#0c1420;--border:rgba(56,189,248,.12);--border2:rgba(56,189,248,.25);
-      --accent:#38bdf8;--accent2:#818cf8;--heat:#fb923c;--green:#4ade80;--rain:#60a5fa;
-      --muted:#475569;--text:#e2e8f0;--text-dim:#64748b;
-      --font-mono:'Space Mono',monospace;--font-head:'Syne',sans-serif;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --paper: #f5f0e8;
+      --paper2: #ede8d8;
+      --paper3: #faf7f0;
+      --ink: #2c2416;
+      --ink-light: #6b5c3e;
+      --ink-faded: #a08c6e;
+      --rule: rgba(100, 130, 200, 0.25);
+      --margin: rgba(220, 80, 60, 0.35);
+      --red: #c0392b;
+      --blue-ink: #1a3a6e;
+      --pencil: #7a6a52;
+      --highlight: rgba(255, 220, 80, 0.45);
+      --stamp-green: #2d6a4f;
+      --stamp-red: #c0392b;
+      --font-hand: 'Caveat', cursive;
+      --font-type: 'Special Elite', cursive;
+      --font-mono: 'Courier Prime', monospace;
     }
-    body{background:var(--bg);color:var(--text);font-family:var(--font-mono);min-height:100vh;padding:24px 20px 40px;max-width:960px;margin:0 auto}
-    body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:999}
-    .header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;gap:12px;flex-wrap:wrap}
-    .header-left h1{font-family:var(--font-head);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.02em;color:var(--accent);line-height:1;margin-bottom:4px}
-    .header-left p{font-size:.75rem;color:var(--text-dim);letter-spacing:.06em}
-    .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-    .live-badge{display:flex;align-items:center;gap:6px;font-size:.7rem;letter-spacing:.1em;color:var(--green);border:1px solid rgba(74,222,128,.25);padding:4px 10px;border-radius:20px}
-    .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.6s ease-in-out infinite}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-    #last-updated{font-size:.65rem;color:var(--text-dim)}
-    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 14px;position:relative;overflow:hidden;transition:border-color .2s}
-    .card:hover{border-color:var(--border2)}
-    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-accent,var(--accent));opacity:.7}
-    .card-icon{font-size:.7rem;margin-bottom:10px;color:var(--text-dim);letter-spacing:.06em}
-    .card-value{font-family:var(--font-head);font-size:2rem;font-weight:800;line-height:1;color:var(--card-accent,var(--accent));margin-bottom:6px}
-    .card-unit{font-size:.62rem;color:var(--text-dim);letter-spacing:.08em}
-    .c-temp{--card-accent:var(--heat)}.c-hum{--card-accent:var(--accent)}.c-uv{--card-accent:var(--accent2)}
-    .c-wind{--card-accent:var(--green)}.c-rain{--card-accent:var(--rain)}.c-ok{--card-accent:var(--green)}.c-err{--card-accent:#f87171}
-    .charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
-    @media(max-width:580px){.charts{grid-template-columns:1fr}}
-    .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 14px 10px}
-    .chart-label{font-size:.65rem;letter-spacing:.1em;color:var(--text-dim);margin-bottom:10px}
-    .table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;overflow-x:auto}
-    .table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
-    .table-title{font-size:.65rem;letter-spacing:.1em;color:var(--text-dim)}
-    .row-count{font-size:.65rem;color:var(--muted)}
-    table{width:100%;border-collapse:collapse;font-size:.72rem;min-width:480px}
-    th{text-align:left;padding:6px 10px;color:var(--text-dim);border-bottom:1px solid var(--border);font-weight:400;letter-spacing:.06em;white-space:nowrap}
-    td{padding:7px 10px;border-bottom:1px solid rgba(56,189,248,.05);white-space:nowrap}
-    tr:last-child td{border-bottom:none}
-    tr:hover td{background:rgba(56,189,248,.03)}
-    .badge{display:inline-block;font-size:.62rem;padding:2px 8px;border-radius:20px;letter-spacing:.05em}
-    .b-yes{background:rgba(96,165,250,.12);color:var(--rain);border:1px solid rgba(96,165,250,.2)}
-    .b-no{background:rgba(71,85,105,.15);color:var(--muted);border:1px solid rgba(71,85,105,.2)}
-    .b-ok{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.2)}
-    .b-err{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2)}
-    .btn-refresh{background:transparent;border:1px solid var(--border2);color:var(--accent);font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;padding:6px 14px;border-radius:6px;cursor:pointer;transition:background .15s}
-    .btn-refresh:hover{background:rgba(56,189,248,.08)}
-    .spin{display:inline-block;animation:spin .7s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
+
+    body {
+      background: #c8bfa8;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(180,160,120,0.4) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(150,130,100,0.3) 0%, transparent 50%);
+      font-family: var(--font-hand);
+      min-height: 100vh;
+      padding: 30px 20px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* NOTEBOOK WRAPPER */
+    .notebook {
+      background: var(--paper);
+      max-width: 900px;
+      width: 100%;
+      border-radius: 3px 8px 8px 3px;
+      box-shadow:
+        -6px 0 0 #bbb0a0,
+        -10px 0 0 #a89880,
+        -14px 0 0 #9d8e7a,
+        4px 4px 20px rgba(0,0,0,0.25),
+        8px 8px 40px rgba(0,0,0,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Spiral binding holes */
+    .spirals {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 28px;
+      background: #9d8e7a;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-around;
+      padding: 20px 0;
+    }
+    .spiral-hole {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #c8bfa8;
+      border: 2px solid #7a6a52;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Notebook content area */
+    .nb-content {
+      margin-left: 28px;
+      position: relative;
+    }
+
+    /* Red margin line */
+    .nb-content::before {
+      content: '';
+      position: absolute;
+      left: 52px;
+      top: 0;
+      bottom: 0;
+      width: 1.5px;
+      background: var(--margin);
+      z-index: 1;
+    }
+
+    /* Horizontal ruled lines */
+    .ruled-bg {
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 31px,
+        var(--rule) 31px,
+        var(--rule) 32px
+      );
+      background-position: 0 60px;
+      pointer-events: none;
+    }
+
+    /* PAGE HEADER */
+    .page-header {
+      padding: 22px 30px 18px 68px;
+      border-bottom: 2px solid var(--ink);
+      position: relative;
+      z-index: 2;
+    }
+
+    .page-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .nb-title {
+      font-family: var(--font-type);
+      font-size: 1.6rem;
+      color: var(--ink);
+      letter-spacing: .02em;
+      line-height: 1;
+    }
+
+    .nb-subtitle {
+      font-family: var(--font-hand);
+      font-size: 1rem;
+      color: var(--ink-light);
+      margin-top: 4px;
+    }
+
+    .header-right-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .stamp {
+      font-family: var(--font-type);
+      font-size: .6rem;
+      letter-spacing: .12em;
+      border: 2px solid var(--stamp-green);
+      color: var(--stamp-green);
+      padding: 3px 8px;
+      border-radius: 3px;
+      transform: rotate(-1.5deg);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .stamp-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--stamp-green);
+      animation: blink 1.6s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+    .page-date {
+      font-family: var(--font-hand);
+      font-size: .85rem;
+      color: var(--ink-faded);
+    }
+
+    #last-updated {
+      font-family: var(--font-hand);
+      font-size: .78rem;
+      color: var(--ink-faded);
+    }
+
+    /* PAGE BODY */
+    .page-body {
+      padding: 16px 30px 30px 68px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* SECTION LABEL */
+    .section-label {
+      font-family: var(--font-type);
+      font-size: .7rem;
+      letter-spacing: .15em;
+      color: var(--ink-faded);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      margin-top: 22px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--ink-faded);
+      opacity: .3;
+    }
+
+    /* READING CARDS */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .card {
+      background: var(--paper3);
+      border: 1.5px solid rgba(44,36,22,0.15);
+      border-radius: 4px;
+      padding: 12px 10px 10px;
+      position: relative;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.07);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .card:hover {
+      transform: translateY(-2px) rotate(.3deg);
+      box-shadow: 2px 4px 10px rgba(0,0,0,0.12);
+    }
+
+    /* Tape strips on corners */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 36px;
+      height: 12px;
+      background: rgba(255,220,80,0.55);
+      border: 1px solid rgba(200,170,50,0.3);
+      border-radius: 1px;
+    }
+
+    .card-icon {
+      font-family: var(--font-type);
+      font-size: .58rem;
+      color: var(--ink-faded);
+      letter-spacing: .1em;
+      margin-bottom: 8px;
+      margin-top: 4px;
+    }
+
+    .card-value {
+      font-family: var(--font-hand);
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--card-color, var(--ink));
+      margin-bottom: 2px;
+    }
+
+    .card-unit {
+      font-family: var(--font-hand);
+      font-size: .72rem;
+      color: var(--ink-faded);
+    }
+
+    /* card color variants */
+    .c-temp { --card-color: #c0392b; }
+    .c-hum  { --card-color: #1a3a6e; }
+    .c-uv   { --card-color: #6d28d9; }
+    .c-wind { --card-color: #1a5c3a; }
+    .c-rain { --card-color: #1a3a6e; }
+    .c-ok   { --card-color: #1a5c3a; }
+    .c-err  { --card-color: #c0392b; }
+
+    /* Hand-drawn underline on card value */
+    .card-value::after {
+      content: '';
+      display: block;
+      height: 2px;
+      background: currentColor;
+      opacity: .2;
+      margin-top: 4px;
+      border-radius: 1px;
+    }
+
+    /* CHARTS */
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 4px;
+    }
+    @media(max-width:560px) { .charts { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: var(--paper3);
+      border: 1.5px solid rgba(44,36,22,0.12);
+      border-radius: 4px;
+      padding: 14px 12px 10px;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.06);
+      position: relative;
+    }
+
+    /* Corner fold */
+    .chart-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 18px; height: 18px;
+      background: linear-gradient(135deg, var(--paper3) 50%, rgba(44,36,22,0.1) 50%);
+    }
+
+    .chart-label {
+      font-family: var(--font-hand);
+      font-size: .85rem;
+      color: var(--ink-light);
+      margin-bottom: 8px;
+    }
+    .chart-label span {
+      font-family: var(--font-type);
+      font-size: .6rem;
+      letter-spacing: .1em;
+      color: var(--ink-faded);
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+
+    /* TABLE */
+    .table-card {
+      background: var(--paper3);
+      border: 1.5px solid rgba(44,36,22,0.12);
+      border-radius: 4px;
+      padding: 14px;
+      overflow-x: auto;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .table-title {
+      font-family: var(--font-hand);
+      font-size: 1rem;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .row-count {
+      font-family: var(--font-type);
+      font-size: .6rem;
+      color: var(--ink-faded);
+      letter-spacing: .08em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 480px;
+    }
+
+    th {
+      font-family: var(--font-type);
+      font-size: .6rem;
+      letter-spacing: .1em;
+      color: var(--ink-faded);
+      text-align: left;
+      padding: 6px 10px;
+      border-bottom: 1.5px solid var(--ink);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    td {
+      font-family: var(--font-hand);
+      font-size: .9rem;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--rule);
+      white-space: nowrap;
+      color: var(--ink);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--highlight); }
+
+    .badge {
+      font-family: var(--font-type);
+      font-size: .58rem;
+      letter-spacing: .08em;
+      padding: 2px 8px;
+      border-radius: 2px;
+      border: 1.5px solid;
+      display: inline-block;
+    }
+    .b-yes { color: #1a3a6e; border-color: #1a3a6e; background: rgba(26,58,110,0.07); }
+    .b-no  { color: var(--ink-faded); border-color: var(--ink-faded); background: transparent; }
+    .b-ok  { color: #1a5c3a; border-color: #1a5c3a; background: rgba(26,92,58,0.07); }
+    .b-err { color: #c0392b; border-color: #c0392b; background: rgba(192,57,43,0.07); }
+
+    /* REFRESH BUTTON */
+    .btn-refresh {
+      background: transparent;
+      border: 1.5px solid var(--ink-faded);
+      color: var(--ink-light);
+      font-family: var(--font-type);
+      font-size: .6rem;
+      letter-spacing: .1em;
+      padding: 5px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-refresh:hover {
+      background: var(--ink);
+      color: var(--paper);
+      border-color: var(--ink);
+    }
+
+    .spin { display: inline-block; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* PAGE NUMBER */
+    .page-number {
+      text-align: right;
+      padding: 12px 20px 16px 68px;
+      font-family: var(--font-type);
+      font-size: .65rem;
+      color: var(--ink-faded);
+      letter-spacing: .1em;
+      border-top: 1px solid rgba(44,36,22,0.1);
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Pencil scribble decoration */
+    .scribble {
+      position: absolute;
+      font-family: var(--font-hand);
+      color: var(--pencil);
+      opacity: 0.4;
+      pointer-events: none;
+      font-size: .75rem;
+      transform: rotate(-2deg);
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-left">
-      <h1>WEATHER STATION</h1>
-      <p>ESP32 + DHT11 &rarr; SUPABASE</p>
-    </div>
-    <div class="header-right">
-      <div class="live-badge"><span class="live-dot"></span>LIVE</div>
-      <span id="last-updated">&mdash;</span>
-    </div>
-  </div>
 
-  <div class="cards">
-    <div class="card c-temp"><div class="card-icon">TEMPERATURE</div><div class="card-value" id="v-temp">--</div><div class="card-unit">CELSIUS</div></div>
-    <div class="card c-hum"><div class="card-icon">HUMIDITY</div><div class="card-value" id="v-hum">--</div><div class="card-unit">PERCENT</div></div>
-    <div class="card c-uv"><div class="card-icon">UV INDEX</div><div class="card-value" id="v-uv">--</div><div class="card-unit">SCALE 0-11</div></div>
-    <div class="card c-wind"><div class="card-icon">WIND SPEED</div><div class="card-value" id="v-wind">--</div><div class="card-unit">M / S</div></div>
-    <div class="card c-rain" id="rain-card"><div class="card-icon">RAIN FORECAST</div><div class="card-value" id="v-rain">--</div><div class="card-unit">PREDICTION</div></div>
-    <div class="card c-ok" id="sensor-card"><div class="card-icon">SENSOR</div><div class="card-value" id="v-sensor">--</div><div class="card-unit">STATUS</div></div>
-  </div>
+<div class="notebook">
+  <!-- Spiral binding -->
+  <div class="spirals" id="spirals"></div>
 
-  <div class="charts">
-    <div class="chart-card">
-      <div class="chart-label">TEMPERATURE HISTORY (&deg;C)</div>
-      <div style="position:relative;height:150px"><canvas id="tempChart" role="img" aria-label="Temperature history">Temperature over recent readings.</canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-label">HUMIDITY HISTORY (%)</div>
-      <div style="position:relative;height:150px"><canvas id="humChart" role="img" aria-label="Humidity history">Humidity over recent readings.</canvas></div>
-    </div>
-  </div>
+  <div class="nb-content">
+    <div class="ruled-bg"></div>
 
-  <div class="table-card">
-    <div class="table-header">
-      <span class="table-title">RECENT READINGS</span>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span class="row-count" id="row-count"></span>
-        <button class="btn-refresh" id="btn-refresh" onclick="loadData()">&#8635; REFRESH</button>
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="page-meta">
+        <div>
+          <div class="nb-title">Field Weather Log</div>
+          <div class="nb-subtitle">ESP32 + DHT11 → Supabase</div>
+        </div>
+        <div class="header-right-block">
+          <div class="stamp">
+            <span class="stamp-dot"></span>
+            LIVE READING
+          </div>
+          <div class="page-date" id="page-date"></div>
+          <div id="last-updated">—</div>
+        </div>
       </div>
     </div>
-    <table>
-      <thead><tr><th>TIME</th><th>TEMP &deg;C</th><th>HUM %</th><th>UV</th><th>WIND m/s</th><th>RAIN</th><th>SENSOR</th></tr></thead>
-      <tbody id="tbl-body"><tr><td colspan="7" style="text-align:center;padding:24px;color:#475569">Loading...</td></tr></tbody>
-    </table>
+
+    <!-- PAGE BODY -->
+    <div class="page-body">
+
+      <div class="section-label">Current Observations</div>
+
+      <div class="cards">
+        <div class="card c-temp">
+          <div class="card-icon">TEMPERATURE</div>
+          <div class="card-value" id="v-temp">--</div>
+          <div class="card-unit">degrees celsius</div>
+        </div>
+        <div class="card c-hum">
+          <div class="card-icon">HUMIDITY</div>
+          <div class="card-value" id="v-hum">--</div>
+          <div class="card-unit">percent</div>
+        </div>
+        <div class="card c-uv">
+          <div class="card-icon">UV INDEX</div>
+          <div class="card-value" id="v-uv">--</div>
+          <div class="card-unit">scale 0–11</div>
+        </div>
+        <div class="card c-wind">
+          <div class="card-icon">WIND SPEED</div>
+          <div class="card-value" id="v-wind">--</div>
+          <div class="card-unit">meters / sec</div>
+        </div>
+        <div class="card c-rain" id="rain-card">
+          <div class="card-icon">RAIN FORECAST</div>
+          <div class="card-value" id="v-rain">--</div>
+          <div class="card-unit">prediction</div>
+        </div>
+        <div class="card c-ok" id="sensor-card">
+          <div class="card-icon">SENSOR</div>
+          <div class="card-value" id="v-sensor">--</div>
+          <div class="card-unit">status</div>
+        </div>
+      </div>
+
+      <div class="section-label">Trend Charts</div>
+
+      <div class="charts">
+        <div class="chart-card">
+          <div class="chart-label">Temperature <span>°C OVER TIME</span></div>
+          <div style="position:relative;height:145px">
+            <canvas id="tempChart" role="img" aria-label="Temperature history"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label">Humidity <span>% OVER TIME</span></div>
+          <div style="position:relative;height:145px">
+            <canvas id="humChart" role="img" aria-label="Humidity history"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Recent Readings</div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">Logged Entries</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="row-count" id="row-count"></span>
+            <button class="btn-refresh" id="btn-refresh" onclick="loadData()">↻ REFRESH</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>TIME</th>
+              <th>TEMP °C</th>
+              <th>HUM %</th>
+              <th>UV</th>
+              <th>WIND m/s</th>
+              <th>RAIN</th>
+              <th>SENSOR</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body">
+            <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-faded);font-family:var(--font-type);font-size:.7rem;letter-spacing:.1em">LOADING ENTRIES...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /page-body -->
+
+    <div class="page-number">pg. 1 &nbsp;·&nbsp; WEATHER STATION FIELD NOTEBOOK</div>
   </div>
+</div>
 
-  <script>
-    const SB_URL = 'https://zdowwogjnrqvzaztpqet.supabase.co';
-    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpkb3d3b2dqbnJxdnphenRwcWV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzI2NTEsImV4cCI6MjA5MTUwODY1MX0.2IrDSUflnZZm3YkAKtVq-JdOhM-Yjui_2iWr0qWKE5s';
+<script>
+  const SB_URL = 'https://zdowwogjnrqvzaztpqet.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpkb3d3b2dqbnJxdnphenRwcWV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzI2NTEsImV4cCI6MjA5MTUwODY1MX0.2IrDSUflnZZm3YkAKtVq-JdOhM-Yjui_2iWr0qWKE5s';
 
-    let tempChart, humChart;
+  let tempChart, humChart;
 
-    function fmt(iso){ return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+  // Set date
+  document.getElementById('page-date').textContent =
+    new Date().toLocaleDateString([], { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 
-    function fakeRows(){
-      const rows=[]; const now=Date.now();
-      for(let i=14;i>=0;i--) rows.push({
-        created_at:new Date(now-i*30000).toISOString(),
-        temperature:+(27+Math.sin(i*.5)*3+Math.random()*.5).toFixed(1),
-        humidity:+(62+Math.cos(i*.4)*8+Math.random()).toFixed(1),
-        uv_index:+(Math.random()*10).toFixed(1),
-        wind_speed:+(Math.random()*12).toFixed(1),
-        rain_forecast:Math.random()>.65,
-        sensor_ok:true
-      });
-      return rows;
-    }
+  // Build spiral holes
+  const spiralEl = document.getElementById('spirals');
+  for (let i = 0; i < 18; i++) {
+    const h = document.createElement('div');
+    h.className = 'spiral-hole';
+    spiralEl.appendChild(h);
+  }
 
-    function renderCards(r){
-      document.getElementById('v-temp').textContent=r.temperature.toFixed(1);
-      document.getElementById('v-hum').textContent=r.humidity.toFixed(1);
-      document.getElementById('v-uv').textContent=r.uv_index.toFixed(1);
-      document.getElementById('v-wind').textContent=r.wind_speed.toFixed(1);
-      document.getElementById('v-rain').textContent=r.rain_forecast?'YES':'NO';
-      document.getElementById('rain-card').className=r.rain_forecast?'card c-rain':'card';
-      document.getElementById('v-sensor').textContent=r.sensor_ok?'OK':'ERR';
-      document.getElementById('sensor-card').className=r.sensor_ok?'card c-ok':'card c-err';
-    }
+  function fmt(iso) {
+    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
 
-    function renderTable(rows){
-      const tbody=document.getElementById('tbl-body');
-      tbody.innerHTML='';
-      document.getElementById('row-count').textContent=rows.length+' ROWS';
-      [...rows].reverse().forEach(r=>{
-        const tr=document.createElement('tr');
-        tr.innerHTML=`<td style="color:var(--text-dim)">${fmt(r.created_at)}</td>
-          <td style="color:var(--heat);font-weight:700">${r.temperature.toFixed(1)}</td>
-          <td style="color:var(--accent)">${r.humidity.toFixed(1)}</td>
-          <td style="color:var(--accent2)">${r.uv_index.toFixed(1)}</td>
-          <td style="color:var(--green)">${r.wind_speed.toFixed(1)}</td>
-          <td><span class="badge ${r.rain_forecast?'b-yes':'b-no'}">${r.rain_forecast?'YES':'NO'}</span></td>
-          <td><span class="badge ${r.sensor_ok?'b-ok':'b-err'}">${r.sensor_ok?'OK':'ERR'}</span></td>`;
-        tbody.appendChild(tr);
-      });
-    }
+  function fakeRows() {
+    const rows = []; const now = Date.now();
+    for (let i = 14; i >= 0; i--) rows.push({
+      created_at: new Date(now - i * 30000).toISOString(),
+      temperature: +(27 + Math.sin(i * .5) * 3 + Math.random() * .5).toFixed(1),
+      humidity:    +(62 + Math.cos(i * .4) * 8 + Math.random()).toFixed(1),
+      uv_index:    +(Math.random() * 10).toFixed(1),
+      wind_speed:  +(Math.random() * 12).toFixed(1),
+      rain_forecast: Math.random() > .65,
+      sensor_ok: true
+    });
+    return rows;
+  }
 
-    function renderCharts(rows){
-      const labels=rows.map(r=>fmt(r.created_at));
-      const temps=rows.map(r=>+r.temperature.toFixed(1));
-      const hums=rows.map(r=>+r.humidity.toFixed(1));
-      const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:'#475569',font:{size:9,family:'Space Mono'},maxRotation:0,maxTicksLimit:6},grid:{color:'rgba(56,189,248,.06)'}},
-                y:{ticks:{color:'#475569',font:{size:9,family:'Space Mono'}},grid:{color:'rgba(56,189,248,.06)'}}}};
-      if(tempChart) tempChart.destroy();
-      if(humChart)  humChart.destroy();
-      tempChart=new Chart(document.getElementById('tempChart'),{type:'line',data:{labels,datasets:[{data:temps,borderColor:'#fb923c',backgroundColor:'rgba(251,146,60,.06)',tension:.35,pointRadius:2,fill:true,borderWidth:1.5}]},options:base});
-      humChart =new Chart(document.getElementById('humChart'), {type:'line',data:{labels,datasets:[{data:hums, borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.06)', tension:.35,pointRadius:2,fill:true,borderWidth:1.5}]},options:base});
-    }
+  function renderCards(r) {
+    document.getElementById('v-temp').textContent   = r.temperature.toFixed(1);
+    document.getElementById('v-hum').textContent    = r.humidity.toFixed(1);
+    document.getElementById('v-uv').textContent     = r.uv_index.toFixed(1);
+    document.getElementById('v-wind').textContent   = r.wind_speed.toFixed(1);
+    document.getElementById('v-rain').textContent   = r.rain_forecast ? 'YES' : 'NO';
+    document.getElementById('rain-card').className  = r.rain_forecast ? 'card c-rain' : 'card';
+    document.getElementById('v-sensor').textContent = r.sensor_ok ? 'OK' : 'ERR';
+    document.getElementById('sensor-card').className= r.sensor_ok ? 'card c-ok' : 'card c-err';
+  }
 
-    async function loadData(){
-      const btn=document.getElementById('btn-refresh');
-      btn.innerHTML='<span class="spin">&#8635;</span> LOADING'; btn.disabled=true;
-      let rows;
-      try{
-        const res=await fetch(`${SB_URL}/rest/v1/sensor_readings?select=*&order=created_at.desc&limit=20`,
-          {headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
-        const data=await res.json();
-        rows=Array.isArray(data)&&data.length>0?[...data].reverse():fakeRows();
-      }catch(e){ rows=fakeRows(); }
-      renderCards(rows[rows.length-1]);
-      renderTable(rows);
-      renderCharts(rows);
-      document.getElementById('last-updated').textContent='UPDATED '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-      btn.innerHTML='&#8635; REFRESH'; btn.disabled=false;
-    }
+  function renderTable(rows) {
+    const tbody = document.getElementById('tbl-body');
+    tbody.innerHTML = '';
+    document.getElementById('row-count').textContent = rows.length + ' ENTRIES';
+    [...rows].reverse().forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:var(--ink-faded)">${fmt(r.created_at)}</td>
+        <td style="color:#c0392b;font-weight:600">${r.temperature.toFixed(1)}</td>
+        <td style="color:#1a3a6e">${r.humidity.toFixed(1)}</td>
+        <td style="color:#6d28d9">${r.uv_index.toFixed(1)}</td>
+        <td style="color:#1a5c3a">${r.wind_speed.toFixed(1)}</td>
+        <td><span class="badge ${r.rain_forecast ? 'b-yes' : 'b-no'}">${r.rain_forecast ? 'YES' : 'NO'}</span></td>
+        <td><span class="badge ${r.sensor_ok ? 'b-ok' : 'b-err'}">${r.sensor_ok ? 'OK' : 'ERR'}</span></td>`;
+      tbody.appendChild(tr);
+    });
+  }
 
-    loadData();
-    setInterval(loadData,15000);
-  </script>
+  function renderCharts(rows) {
+    const labels = rows.map(r => fmt(r.created_at));
+    const temps  = rows.map(r => +r.temperature.toFixed(1));
+    const hums   = rows.map(r => +r.humidity.toFixed(1));
+
+    const baseOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          ticks: { color: '#a08c6e', font: { size: 9, family: 'Courier Prime' }, maxRotation: 0, maxTicksLimit: 6 },
+          grid: { color: 'rgba(100,130,200,0.15)' }
+        },
+        y: {
+          ticks: { color: '#a08c6e', font: { size: 9, family: 'Courier Prime' } },
+          grid: { color: 'rgba(100,130,200,0.15)' }
+        }
+      }
+    };
+
+    if (tempChart) tempChart.destroy();
+    if (humChart)  humChart.destroy();
+
+    tempChart = new Chart(document.getElementById('tempChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: temps,
+          borderColor: '#c0392b',
+          backgroundColor: 'rgba(192,57,43,0.06)',
+          tension: .4, pointRadius: 2.5,
+          fill: true, borderWidth: 1.5,
+          pointBackgroundColor: '#c0392b'
+        }]
+      },
+      options: baseOpts
+    });
+
+    humChart = new Chart(document.getElementById('humChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: hums,
+          borderColor: '#1a3a6e',
+          backgroundColor: 'rgba(26,58,110,0.06)',
+          tension: .4, pointRadius: 2.5,
+          fill: true, borderWidth: 1.5,
+          pointBackgroundColor: '#1a3a6e'
+        }]
+      },
+      options: baseOpts
+    });
+  }
+
+  async function loadData() {
+    const btn = document.getElementById('btn-refresh');
+    btn.innerHTML = '<span class="spin">↻</span> LOADING'; btn.disabled = true;
+
+    let rows;
+    try {
+      const res = await fetch(
+        `${SB_URL}/rest/v1/sensor_readings?select=*&order=created_at.desc&limit=20`,
+        { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } }
+      );
+      const data = await res.json();
+      rows = Array.isArray(data) && data.length > 0 ? [...data].reverse() : fakeRows();
+    } catch (e) { rows = fakeRows(); }
+
+    renderCards(rows[rows.length - 1]);
+    renderTable(rows);
+    renderCharts(rows);
+
+    document.getElementById('last-updated').textContent =
+      'updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    btn.innerHTML = '↻ REFRESH'; btn.disabled = false;
+  }
+
+  loadData();
+  setInterval(loadData, 15000);
+</script>
 </body>
 </html>
